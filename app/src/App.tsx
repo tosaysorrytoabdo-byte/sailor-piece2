@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { CartProvider } from '@/hooks/useCart';
 import { OrdersProvider } from '@/hooks/useOrders';
+import { ProductsProvider } from '@/hooks/useProducts';
 import Header from '@/sections/Header';
 import Hero from '@/sections/Hero';
 import ProductsSection from '@/sections/ProductsSection';
@@ -14,36 +15,38 @@ function App() {
 
   if (currentPage === 'admin') {
     return (
-      <OrdersProvider>
-        <AdminDashboard onExit={() => setCurrentPage('home')} />
-      </OrdersProvider>
+      <ProductsProvider>
+        <OrdersProvider>
+          <AdminDashboard onExit={() => setCurrentPage('home')} />
+        </OrdersProvider>
+      </ProductsProvider>
     );
   }
 
   return (
-    <CartProvider>
-      <OrdersProvider>
-        <div className="min-h-screen bg-black text-white">
-          <Header />
-          <main>
-            <Hero />
-            <ProductsSection />
-            <OrdersSection />
-          </main>
-          <Footer />
-          <Cart />
-
-          {/* زر لوحة التحكم - مخفي في الركن */}
-          <button
-            onClick={() => setCurrentPage('admin')}
-            className="fixed bottom-4 left-4 w-8 h-8 bg-white/5 border border-white/10 rounded-lg flex items-center justify-center text-white/20 hover:text-white/50 hover:border-white/30 transition-all"
-            title="لوحة التحكم"
-          >
-            ⚙
-          </button>
-        </div>
-      </OrdersProvider>
-    </CartProvider>
+    <ProductsProvider>
+      <CartProvider>
+        <OrdersProvider>
+          <div className="min-h-screen bg-black text-white">
+            <Header />
+            <main>
+              <Hero />
+              <ProductsSection />
+              <OrdersSection />
+            </main>
+            <Footer />
+            <Cart />
+            <button
+              onClick={() => setCurrentPage('admin')}
+              className="fixed bottom-4 left-4 w-8 h-8 bg-white/5 border border-white/10 rounded-lg flex items-center justify-center text-white/20 hover:text-white/50 hover:border-white/30 transition-all"
+              title="لوحة التحكم"
+            >
+              ⚙
+            </button>
+          </div>
+        </OrdersProvider>
+      </CartProvider>
+    </ProductsProvider>
   );
 }
 
