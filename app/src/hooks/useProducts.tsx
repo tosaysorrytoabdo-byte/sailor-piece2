@@ -1,4 +1,9 @@
-import { createContext, useContext, useState, useCallback, type ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react';
+import {
+  collection, onSnapshot, addDoc, updateDoc, deleteDoc,
+  doc, setDoc
+} from 'firebase/firestore';
+import { db } from '@/lib/firebase';
 import type { Product } from '@/types';
 import { fruits, swords, levelingServices } from '@/data/store';
 
@@ -10,40 +15,38 @@ interface ProductsContextType {
 }
 
 const ProductsContext = createContext<ProductsContextType | undefined>(undefined);
-
 const defaultProducts = [...fruits, ...swords, ...levelingServices];
 
 export function ProductsProvider({ children }: { children: ReactNode }) {
-  const [products, setProducts] = useState<Product[]>(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('slr-products');
-      if (saved) {
-        try { return JSON.parse(saved); } catch { return defaultProducts; }
-      }
-    }
-    return defaultProducts;
-  });
+  const [products, setProducts] = useState<Product[]>(defaultProducts);
+  const [loaded, setLoaded] = useState(false);
 
-  const save = useCallback((newProducts: Product[]) => {
-    setProducts(newProducts);
-    localStorage.setItem('slr-products', JSON.stringify(newProducts));
+  useEffect(() => {
+    const unsub = onSnapshot(collection(db, 'products'), (snapshot) => {
+      if (snapshot.empty && !loaded) {
+        // أول مرة — نحمّل المنتجات الافتراضية على Firebase
+        defaultProducts.forEach(p => setDoc(doc(db, 'products', p.id), p));
+      } else {
+        const data = snapshot.docs.map(d => ({ ...d.data(), id: d.id })) as Product[];
+        setProducts(data);
+      }
+      setLoaded(true);
+    });
+    return () => unsub();
   }, []);
 
-  const addProduct = useCallback((product: Omit<Product, 'id'>) => {
-    const newProduct: Product = {
-      ...product,
-      id: `product-${Date.now()}`,
-    };
-    save([...products, newProduct]);
-  }, [products, save]);
+  const addProduct = useCallback(async (product: Omit<Product, 'id'>) => {
+    const id = `product-${Date.now()}`;
+    await setDoc(doc(db, 'products', id), { ...product, id });
+  }, []);
 
-  const updateProduct = useCallback((id: string, updates: Partial<Product>) => {
-    save(products.map(p => p.id === id ? { ...p, ...updates } : p));
-  }, [products, save]);
+  const updateProduct = useCallback(async (id: string, updates: Partial<Product>) => {
+    await updateDoc(doc(db, 'products', id), updates);
+  }, []);
 
-  const deleteProduct = useCallback((id: string) => {
-    save(products.filter(p => p.id !== id));
-  }, [products, save]);
+  const deleteProduct = useCallback(async (id: string) => {
+    await deleteDoc(doc(db, 'products', id));
+  }, []);
 
   return (
     <ProductsContext.Provider value={{ products, addProduct, updateProduct, deleteProduct }}>
