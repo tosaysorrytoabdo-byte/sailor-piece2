@@ -2,9 +2,10 @@ import { useState } from 'react';
 import { X, Plus, Minus, ShoppingBag, Send, User, AtSign, MessageSquare, Check } from 'lucide-react';
 import { useCart } from '@/hooks/useCart';
 import { useOrders } from '@/hooks/useOrders';
-import { storeConfig } from '@/data/store';
+import { useStoreConfig } from '@/hooks/useStoreConfig';
 
 export default function Cart() {
+  const { config: storeConfig } = useStoreConfig();
   const { items, removeFromCart, updateQuantity, totalPrice, clearCart, isOpen, setIsOpen } = useCart();
   const { addOrder } = useOrders();
   const [showCheckout, setShowCheckout] = useState(false);

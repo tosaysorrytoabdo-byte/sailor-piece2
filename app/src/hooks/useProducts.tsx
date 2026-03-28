@@ -1,8 +1,5 @@
 import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react';
-import {
-  collection, onSnapshot, updateDoc, deleteDoc,
-  doc, setDoc
-} from 'firebase/firestore';
+import { collection, onSnapshot, updateDoc, deleteDoc, doc, setDoc, writeBatch } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import type { Product } from '@/types';
 import { fruits, swords, levelingServices } from '@/data/store';
@@ -12,6 +9,7 @@ interface ProductsContextType {
   addProduct: (product: Omit<Product, 'id'>) => void;
   updateProduct: (id: string, updates: Partial<Product>) => void;
   deleteProduct: (id: string) => void;
+  resetToDefault: () => void;
 }
 
 const ProductsContext = createContext<ProductsContextType | undefined>(undefined);
@@ -19,18 +17,17 @@ const defaultProducts = [...fruits, ...swords, ...levelingServices];
 
 export function ProductsProvider({ children }: { children: ReactNode }) {
   const [products, setProducts] = useState<Product[]>(defaultProducts);
-  const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
     const unsub = onSnapshot(collection(db, 'products'), (snapshot) => {
-      if (snapshot.empty && !loaded) {
-        // أول مرة — نحمّل المنتجات الافتراضية على Firebase
-        defaultProducts.forEach(p => setDoc(doc(db, 'products', p.id), p));
+      if (snapshot.empty) {
+        const batch = writeBatch(db);
+        defaultProducts.forEach(p => batch.set(doc(db, 'products', p.id), p));
+        batch.commit();
       } else {
         const data = snapshot.docs.map(d => ({ ...d.data(), id: d.id })) as Product[];
         setProducts(data);
       }
-      setLoaded(true);
     });
     return () => unsub();
   }, []);
@@ -48,8 +45,18 @@ export function ProductsProvider({ children }: { children: ReactNode }) {
     await deleteDoc(doc(db, 'products', id));
   }, []);
 
+  const resetToDefault = useCallback(async () => {
+    const batch = writeBatch(db);
+    // Delete all existing
+    const snap = await import('firebase/firestore').then(m => m.getDocs(collection(db, 'products')));
+    snap.docs.forEach(d => batch.delete(d.ref));
+    // Add defaults
+    defaultProducts.forEach(p => batch.set(doc(db, 'products', p.id), p));
+    await batch.commit();
+  }, []);
+
   return (
-    <ProductsContext.Provider value={{ products, addProduct, updateProduct, deleteProduct }}>
+    <ProductsContext.Provider value={{ products, addProduct, updateProduct, deleteProduct, resetToDefault }}>
       {children}
     </ProductsContext.Provider>
   );

@@ -35,7 +35,7 @@ const emptyProduct: Omit<Product, 'id'> = {
 
 export default function AdminDashboard({ onExit }: { onExit?: () => void }) {
   const { orders, updateOrderStatus, deleteOrder, getPendingOrders, getCompletedOrders } = useOrders();
-  const { products, addProduct, updateProduct, deleteProduct } = useProducts();
+  const { products, addProduct, updateProduct, deleteProduct, resetToDefault } = useProducts();
   const { config: contact, updateConfig: saveContact } = useStoreConfig();
 
   const [password, setPassword] = useState('');
@@ -310,6 +310,13 @@ export default function AdminDashboard({ onExit }: { onExit?: () => void }) {
                 <button onClick={handleSaveSettings} className="w-full py-3 bg-white text-black rounded-xl font-bold hover:bg-white/90 transition-all">
                   حفظ التغييرات
                 </button>
+
+                <div className="pt-4 border-t border-white/10">
+                  <p className="text-white/40 text-sm mb-3">إعادة ضبط المنتجات للافتراضي (يصلح مشكلة الأسعار القديمة)</p>
+                  <button onClick={() => { if(confirm('هل أنت متأكد؟ سيتم حذف كل التعديلات على المنتجات')) resetToDefault(); }} className="w-full py-3 bg-red-500/10 text-red-400 border border-red-500/20 rounded-xl font-bold hover:bg-red-500/20 transition-all">
+                    🔄 إعادة ضبط المنتجات
+                  </button>
+                </div>
               </div>
             </div>
           </div>
