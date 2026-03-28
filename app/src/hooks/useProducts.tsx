@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react';
 import {
-  collection, onSnapshot, addDoc, updateDoc, deleteDoc,
+  collection, onSnapshot, updateDoc, deleteDoc,
   doc, setDoc
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';

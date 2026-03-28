@@ -22,10 +22,10 @@ export default function Cart() {
     setShowCheckout(true);
   };
 
-  const handleSubmitOrder = () => {
+  const handleSubmitOrder = async () => {
     if (!formData.customerName || !formData.tiktokUsername) return;
 
-    const order = addOrder({
+    const order = await addOrder({
       customerName: formData.customerName,
       tiktokUsername: formData.tiktokUsername,
       items: [...items],
